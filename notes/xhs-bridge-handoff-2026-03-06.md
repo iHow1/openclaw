@@ -1,5 +1,9 @@
 # 小红书发布桥接交接
 
+结构性交付主文档：
+
+- [notes/xhs-execution-layer-delivery-2026-03-09.md](./xhs-execution-layer-delivery-2026-03-09.md)
+
 ## 当前目标
 
 把“小红书图文草稿执行层”先做成稳定的本地桥接能力，再逐步内收到 OpenClaw。
