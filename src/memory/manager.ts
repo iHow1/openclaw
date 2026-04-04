@@ -31,6 +31,7 @@ import type {
   MemorySource,
   MemorySyncProgressUpdate,
 } from "./types.js";
+import { postProcessMemorySearchResults } from "./workspace-records.js";
 const SNIPPET_MAX_CHARS = 700;
 const VECTOR_TABLE = "chunks_vec";
 const FTS_TABLE = "chunks_fts";
@@ -243,6 +244,7 @@ export class MemoryIndexManager extends MemoryManagerEmbeddingOps implements Mem
       maxResults?: number;
       minScore?: number;
       sessionKey?: string;
+      mode?: "normal" | "project_only" | "incognito";
     },
   ): Promise<MemorySearchResult[]> {
     void this.warmSession(opts?.sessionKey);
@@ -296,7 +298,12 @@ export class MemoryIndexManager extends MemoryManagerEmbeddingOps implements Mem
         .filter((entry) => entry.score >= minScore)
         .slice(0, maxResults);
 
-      return merged;
+      return await postProcessMemorySearchResults({
+        workspaceDir: this.workspaceDir,
+        results: merged,
+        sessionKey: opts?.sessionKey,
+        mode: opts?.mode,
+      });
     }
 
     // If FTS isn't available, hybrid mode cannot use keyword search; degrade to vector-only.
@@ -312,7 +319,12 @@ export class MemoryIndexManager extends MemoryManagerEmbeddingOps implements Mem
       : [];
 
     if (!hybrid.enabled || !this.fts.enabled || !this.fts.available) {
-      return vectorResults.filter((entry) => entry.score >= minScore).slice(0, maxResults);
+      return await postProcessMemorySearchResults({
+        workspaceDir: this.workspaceDir,
+        results: vectorResults.filter((entry) => entry.score >= minScore).slice(0, maxResults),
+        sessionKey: opts?.sessionKey,
+        mode: opts?.mode,
+      });
     }
 
     const merged = await this.mergeHybridResults({
@@ -325,7 +337,12 @@ export class MemoryIndexManager extends MemoryManagerEmbeddingOps implements Mem
     });
     const strict = merged.filter((entry) => entry.score >= minScore);
     if (strict.length > 0 || keywordResults.length === 0) {
-      return strict.slice(0, maxResults);
+      return await postProcessMemorySearchResults({
+        workspaceDir: this.workspaceDir,
+        results: strict.slice(0, maxResults),
+        sessionKey: opts?.sessionKey,
+        mode: opts?.mode,
+      });
     }
 
     // Hybrid defaults can produce keyword-only matches with max score equal to
@@ -338,13 +355,18 @@ export class MemoryIndexManager extends MemoryManagerEmbeddingOps implements Mem
         (entry) => `${entry.source}:${entry.path}:${entry.startLine}:${entry.endLine}`,
       ),
     );
-    return merged
-      .filter(
-        (entry) =>
-          keywordKeys.has(`${entry.source}:${entry.path}:${entry.startLine}:${entry.endLine}`) &&
-          entry.score >= relaxedMinScore,
-      )
-      .slice(0, maxResults);
+    return await postProcessMemorySearchResults({
+      workspaceDir: this.workspaceDir,
+      results: merged
+        .filter(
+          (entry) =>
+            keywordKeys.has(`${entry.source}:${entry.path}:${entry.startLine}:${entry.endLine}`) &&
+            entry.score >= relaxedMinScore,
+        )
+        .slice(0, maxResults),
+      sessionKey: opts?.sessionKey,
+      mode: opts?.mode,
+    });
   }
 
   private async searchVector(

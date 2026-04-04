@@ -101,7 +101,12 @@ class FallbackMemoryManager implements MemorySearchManager {
 
   async search(
     query: string,
-    opts?: { maxResults?: number; minScore?: number; sessionKey?: string },
+    opts?: {
+      maxResults?: number;
+      minScore?: number;
+      sessionKey?: string;
+      mode?: "normal" | "project_only" | "incognito";
+    },
   ) {
     if (!this.primaryFailed) {
       try {

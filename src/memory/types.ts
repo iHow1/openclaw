@@ -1,5 +1,19 @@
 export type MemorySource = "memory" | "sessions";
 
+export type MemoryScope = "workspace" | "project" | "session" | "user" | "agent" | "org";
+
+export type MemoryKind = "semantic" | "episodic" | "procedural";
+
+export type MemoryLayer =
+  | "protected_core"
+  | "scoped_long_term"
+  | "session"
+  | "top_of_mind"
+  | "inbox"
+  | "history";
+
+export type MemoryMode = "normal" | "project_only" | "incognito";
+
 export type MemorySearchResult = {
   path: string;
   startLine: number;
@@ -8,6 +22,13 @@ export type MemorySearchResult = {
   snippet: string;
   source: MemorySource;
   citation?: string;
+  scope?: MemoryScope;
+  kind?: MemoryKind;
+  layer?: MemoryLayer;
+  priority?: string;
+  importance?: number;
+  updatedAt?: string;
+  freshnessNote?: string;
 };
 
 export type MemoryEmbeddingProbeResult = {
@@ -61,7 +82,7 @@ export type MemoryProviderStatus = {
 export interface MemorySearchManager {
   search(
     query: string,
-    opts?: { maxResults?: number; minScore?: number; sessionKey?: string },
+    opts?: { maxResults?: number; minScore?: number; sessionKey?: string; mode?: MemoryMode },
   ): Promise<MemorySearchResult[]>;
   readFile(params: {
     relPath: string;

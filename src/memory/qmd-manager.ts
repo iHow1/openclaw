@@ -28,6 +28,7 @@ import type {
   MemorySource,
   MemorySyncProgressUpdate,
 } from "./types.js";
+import { postProcessMemorySearchResults } from "./workspace-records.js";
 
 type SqliteDatabase = import("node:sqlite").DatabaseSync;
 import type {
@@ -726,7 +727,12 @@ export class QmdMemoryManager implements MemorySearchManager {
 
   async search(
     query: string,
-    opts?: { maxResults?: number; minScore?: number; sessionKey?: string },
+    opts?: {
+      maxResults?: number;
+      minScore?: number;
+      sessionKey?: string;
+      mode?: "normal" | "project_only" | "incognito";
+    },
   ): Promise<MemorySearchResult[]> {
     if (!this.isScopeAllowed(opts?.sessionKey)) {
       this.logScopeDenied(opts?.sessionKey);
@@ -861,7 +867,15 @@ export class QmdMemoryManager implements MemorySearchManager {
         source: doc.source,
       });
     }
-    return this.clampResultsByInjectedChars(this.diversifyResultsBySource(results, limit));
+    const filtered = this.clampResultsByInjectedChars(
+      this.diversifyResultsBySource(results, limit),
+    );
+    return await postProcessMemorySearchResults({
+      workspaceDir: this.workspaceDir,
+      results: filtered,
+      sessionKey: opts?.sessionKey,
+      mode: opts?.mode,
+    });
   }
 
   async sync(params?: {
