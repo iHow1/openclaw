@@ -726,6 +726,7 @@ export async function compactEmbeddedPiSessionDirect(
         try {
           const hookEvent = createInternalHookEvent("session", "compact:before", hookSessionKey, {
             sessionId: params.sessionId,
+            sessionFile: params.sessionFile,
             missingSessionKey,
             messageCount: messageCountBefore,
             tokenCount: tokenCountBefore,
@@ -831,6 +832,7 @@ export async function compactEmbeddedPiSessionDirect(
         try {
           const hookEvent = createInternalHookEvent("session", "compact:after", hookSessionKey, {
             sessionId: params.sessionId,
+            sessionFile: params.sessionFile,
             missingSessionKey,
             messageCount: messageCountAfter,
             tokenCount: tokensAfter,
